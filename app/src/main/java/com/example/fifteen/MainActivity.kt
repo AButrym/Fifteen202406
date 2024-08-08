@@ -6,9 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,6 +33,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.TextStyle
@@ -58,7 +61,8 @@ fun FifteenGridStateHolder(engine: FifteenEngine = FifteenEngine) {
     FifteenGrid(
         state,
         engine.isWin(state),
-        FifteenEngine::formatCell) {
+        FifteenEngine::formatCell
+    ) {
         state = engine.transitionState(state, it)
     }
 }
@@ -72,29 +76,41 @@ fun FifteenGrid(
     onClick: (Byte) -> Unit = {}
 ) {
     fun ix(iRow: Int, iCol: Int) = iRow * DIM + iCol
-    Column(
-        modifier = Modifier.fillMaxHeight(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+
+    Box(
+        modifier = Modifier
+            .fillMaxHeight()
     ) {
         if (isVictory) {
-            Text("YOU WON!", style = TextStyle(
-                color = Color.Blue,
-                fontSize = 40.sp,
-                fontWeight = FontWeight.W900
-            ))
+            Text(
+                "YOU WON!",
+                modifier = Modifier
+                    .absoluteOffset(y = 100.dp)
+                    .align(Alignment.TopCenter),
+                style = TextStyle(
+                    color = Color.Blue,
+                    fontSize = 40.sp,
+                    fontWeight = FontWeight.W900
+                )
+            )
         }
-        for (iRow in 0..<DIM) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                for (iCol in 0..<DIM) {
-                    val id = ix(iRow, iCol)
-                    Cell(
-                        formatText(state[id]),
-                        onClick = { onClick(state[id]) }
-                    )
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            for (iRow in 0..<DIM) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    for (iCol in 0..<DIM) {
+                        val id = ix(iRow, iCol)
+                        Cell(
+                            formatText(state[id]),
+                            onClick = { onClick(state[id]) }
+                        )
+                    }
                 }
             }
         }
@@ -104,15 +120,16 @@ fun FifteenGrid(
 
 @Composable
 fun Cell(number: String, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
+    val isVisible = number.isNotBlank()
     FilledTonalButton(
         onClick = onClick,
         contentPadding = PaddingValues(0.dp),
         modifier = Modifier
             .size(90.dp)
+            .alpha(if (isVisible) 1f else 0f)
             .padding(2.dp)
             .then(modifier),
         shape = MaterialTheme.shapes.small
-//        shape = RectangleShape
     ) {
         Text(
             number,
@@ -146,12 +163,12 @@ fun Cell(number: String, modifier: Modifier = Modifier, onClick: () -> Unit = {}
 @Composable
 fun GridPreview() {
     FifteenGrid(
-        byteArrayOf(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+        byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16),
         true, FifteenEngine::formatCell
-        )
+    )
 }
 
-@Preview()
+@Preview(showSystemUi = true)
 @Composable
 fun GridPreview2() {
     FifteenGridStateHolder()
