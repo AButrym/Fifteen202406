@@ -1,26 +1,6 @@
 package com.example.fifteen
 
-import com.example.fifteen.FifteenEngine.Companion.DIM
-import com.example.fifteen.FifteenEngine.Companion.EMPTY
-import com.example.fifteen.FifteenEngine.Companion.col
-import com.example.fifteen.FifteenEngine.Companion.ix
-import com.example.fifteen.FifteenEngine.Companion.row
 import kotlin.math.abs
-
-// MVC - Model View Controller
-
-// Controller - dialog with user
-// View - print board
-// Model - 1) state (data) 2) logic (service)
-
-
-val INITIAL_STATE = ByteArray(16) { (it + 1).toByte() }
-val TEST_STATE = byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 15)
-
-// MODEL: STATE
-var state = INITIAL_STATE.clone()
-
-// MODEL: ENGINE
 
 interface FifteenEngine {
     fun transitionState(oldState: ByteArray, cell: Byte): ByteArray
@@ -30,6 +10,8 @@ interface FifteenEngine {
     companion object : FifteenEngine {
         const val EMPTY: Byte = 16
         const val DIM = 4
+        internal val FINAL_STATE = ByteArray(16) { (it + 1).toByte() }
+
         fun row(ix: Int) = ix / DIM
         fun col(ix: Int) = ix % DIM
         fun ix(row: Int, col: Int) = row * DIM + col
@@ -44,14 +26,14 @@ interface FifteenEngine {
             else oldState
         }
 
-        private fun withSwapped(arr: ByteArray, ix1: Int, ix2: Int): ByteArray {
+        internal fun withSwapped(arr: ByteArray, ix1: Int, ix2: Int): ByteArray {
             if (ix1 == ix2) return arr
             val res = arr.clone()
             res[ix1] = res[ix2].also { res[ix2] = res[ix1] }
             return res
         }
 
-        private fun areAdjacent(ix1: Int, ix2: Int): Boolean {
+        internal fun areAdjacent(ix1: Int, ix2: Int): Boolean {
             val row1 = row(ix1)
             val col1 = col(ix1)
             val row2 = row(ix2)
@@ -61,7 +43,7 @@ interface FifteenEngine {
         }
 
         override fun isWin(state: ByteArray): Boolean =
-            state.contentEquals(INITIAL_STATE)
+            state.contentEquals(FINAL_STATE)
 
         private fun countInversions(state: ByteArray): Int {
             val rowOfEmptyCell = row(state.indexOf(EMPTY))
@@ -78,8 +60,7 @@ interface FifteenEngine {
         private fun isFeasibleSolution(state: ByteArray): Boolean = countInversions(state) % 2 == 1
 
         override fun getInitialState(): ByteArray {
-//    state = TEST_STATE
-            val res = INITIAL_STATE.clone()
+            val res = FINAL_STATE.clone()
             do {
                 res.shuffle()
             } while (!isFeasibleSolution(res))
@@ -87,47 +68,3 @@ interface FifteenEngine {
         }
     }
 }
-
-// CONTROLLER
-fun main() {
-    val engine: FifteenEngine = FifteenEngine
-    println("Welcome to Fifteen Game!")
-    state = engine.getInitialState()
-    while (!engine.isWin(state)) {
-        printBoard(state)
-        val cell: Byte = readCell()
-        state = engine.transitionState(state, cell)
-    }
-    printBoard(state)
-    println("You won!")
-}
-
-fun readCell(
-    println: (String) -> Unit = ::println,
-    readln: () -> String = ::readln
-): Byte {
-    while (true) {
-        println("Enter cell to move (1..15):")
-        val res = readln().toIntOrNull()
-        if (res in 1..15) return res!!.toByte()
-    }
-}
-
-// VIEW
-fun printBoard(
-    state: ByteArray,
-    printer: (String) -> Unit = ::print
-) {
-    printer("-".repeat(18))
-    printer("\n")
-    for (iRow in 0..<DIM) {
-        printer("|")
-        for (iCol in 0..<DIM) {
-            printer(formatCell(state[ix(iRow, iCol)]))
-        }
-        printer("|\n")
-    }
-    printer("------------------")
-}
-
-fun formatCell(cell: Byte) = "%3s ".format(if (cell == EMPTY) " " else cell)
